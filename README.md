@@ -24,4 +24,4 @@ Or merging objects and getting string of changes
 DiffUtils.merge(testEntityInstance1, testEntityInstance2, false)
 ```
 
-If you want create own format of changes you should implement `Difference` interface.
+If you want create your own format of changes you should implement `Difference` interface.
