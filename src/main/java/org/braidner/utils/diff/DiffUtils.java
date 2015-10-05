@@ -19,7 +19,7 @@ public class DiffUtils {
      * @throws IllegalAccessException, NotSameObjectsException
      */
     public static Set<DiffObject> difference(Object mainObject, Object mergeObject) throws IllegalAccessException, NotSameObjectsException {
-        Set<DiffObject> differences = new HashSet<>();
+        Set<DiffObject> differences = new HashSet<DiffObject>();
 
         Class<?> mainClass = mainObject.getClass();
         Class<?> mergeClass = mergeObject.getClass();
@@ -81,7 +81,7 @@ public class DiffUtils {
     }
 
     private static Set<Field> findFields(Class<?> clazz, Class<? extends Annotation> ann) {
-        Set<Field> set = new HashSet<>();
+        Set<Field> set = new HashSet<Field>();
         Class<?> c = clazz;
         while (c != null) {
             for (Field field : c.getDeclaredFields()) {
