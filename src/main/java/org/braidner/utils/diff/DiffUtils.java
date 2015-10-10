@@ -18,7 +18,20 @@ public class DiffUtils {
      * @return Set of diffs, contains old and new values
      * @throws IllegalAccessException, NotSameObjectsException
      */
-    public static Set<DiffObject> difference(Object mainObject, Object mergeObject) throws IllegalAccessException, NotSameObjectsException {
+    public static <T> Set<DiffObject> difference(T mainObject, T mergeObject) throws IllegalAccessException, NotSameObjectsException {
+        return difference(mainObject, mergeObject, Merge.class);
+    }
+
+    /**
+     * Get the differences of two objects.
+     * Searching only field with selected annotation
+     * @param annotation any annotation to fiend fields for merge. Default annotation {@link Merge}
+     * @return Set of diffs, contains old and new values
+     * @throws IllegalAccessException, NotSameObjectsException
+     */
+    public static <T> Set<DiffObject> difference(T mainObject, T mergeObject, Class<? extends Annotation> annotation) throws IllegalAccessException, NotSameObjectsException {
+        annotation = annotation != null ? annotation : Merge.class;
+
         Set<DiffObject> differences = new HashSet<DiffObject>();
 
         Class<?> mainClass = mainObject.getClass();
@@ -28,7 +41,7 @@ public class DiffUtils {
             throw new NotSameObjectsException();
         }
 
-        Set<Field> annotatedFields = findFields(mainClass, Merge.class);
+        Set<Field> annotatedFields = findFields(mainClass, annotation);
         for (Field annotatedField : annotatedFields) {
             annotatedField.setAccessible(true);
             Object oldValue = annotatedField.get(mainObject);
@@ -53,7 +66,7 @@ public class DiffUtils {
      * @return String of changes
      * @throws IllegalAccessException
      */
-    public static String merge(Object mainObject, Object mergeObject, boolean recursive) throws IllegalAccessException {
+    public static <T> String merge(T mainObject, T mergeObject, boolean recursive) throws IllegalAccessException {
         Set<DiffObject> differences = difference(mainObject, mergeObject);
 
         StringBuilder builder = new StringBuilder();
