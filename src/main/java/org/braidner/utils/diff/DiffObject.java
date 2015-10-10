@@ -10,11 +10,19 @@ public class DiffObject {
     private Object oldValue;
     private Object newValue;
     private Field field;
+    private Field mergeField;
 
     public DiffObject(Object oldValue, Object newValue, Field field) {
         this.oldValue = oldValue;
         this.newValue = newValue;
         this.field = field;
+    }
+
+    public DiffObject(Object oldValue, Object newValue, Field field, Field mergeField) {
+        this.oldValue = oldValue;
+        this.newValue = newValue;
+        this.field = field;
+        this.mergeField = mergeField;
     }
 
     public String mergeValues(Object toMerge) throws IllegalAccessException {
@@ -57,5 +65,13 @@ public class DiffObject {
                 ", newValue=" + newValue +
                 ", field=" + field +
                 '}';
+    }
+
+    public Field getMergeField() {
+        return mergeField;
+    }
+
+    public void setMergeField(Field mergeField) {
+        this.mergeField = mergeField;
     }
 }

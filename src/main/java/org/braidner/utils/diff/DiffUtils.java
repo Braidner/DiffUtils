@@ -4,7 +4,9 @@ import org.braidner.utils.exception.NotSameObjectsException;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -12,25 +14,29 @@ import java.util.Set;
  */
 public class DiffUtils {
 
+    private final static Class<Merge> MERGE_CLASS = Merge.class;
+
     /**
      * Get the differences of two objects.
      * Searching only field with annotation {@link Merge}
+     *
      * @return Set of diffs, contains old and new values
      * @throws IllegalAccessException, NotSameObjectsException
      */
     public static <T> Set<DiffObject> difference(T mainObject, T mergeObject) throws IllegalAccessException, NotSameObjectsException {
-        return difference(mainObject, mergeObject, Merge.class);
+        return difference(mainObject, mergeObject, MERGE_CLASS);
     }
 
     /**
      * Get the differences of two objects.
      * Searching only field with selected annotation
+     *
      * @param annotation any annotation to fiend fields for merge. Default annotation {@link Merge}
      * @return Set of diffs, contains old and new values
      * @throws IllegalAccessException, NotSameObjectsException
      */
     public static <T> Set<DiffObject> difference(T mainObject, T mergeObject, Class<? extends Annotation> annotation) throws IllegalAccessException, NotSameObjectsException {
-        annotation = annotation != null ? annotation : Merge.class;
+        annotation = annotation != null ? annotation : MERGE_CLASS;
 
         Set<DiffObject> differences = new HashSet<DiffObject>();
 
@@ -47,7 +53,7 @@ public class DiffUtils {
             Object oldValue = annotatedField.get(mainObject);
             Object newValue = annotatedField.get(mergeObject);
 
-            if (!equals(oldValue, newValue)) {
+            if (notEquals(oldValue, newValue)) {
                 DiffObject difference = new DiffObject(oldValue, newValue, annotatedField);
                 differences.add(difference);
             }
@@ -57,17 +63,74 @@ public class DiffUtils {
 
 
     /**
-     * Merge two objects and returns string of changes.
+     * Simple merge two objects and returns string of changes.
      * Searching only field with annotation {@link Merge}.
      * If you want to change format of returning string you must implement interface {@link Difference}.
-     * @param mainObject Main object to merge
+     *
+     * @param mainObject  Main object to merge
      * @param mergeObject secondary object for merge
-     * @param recursive should merge inner objects
+     * @param recursive   should merge inner objects
      * @return String of changes
      * @throws IllegalAccessException
      */
-    public static <T> String merge(T mainObject, T mergeObject, boolean recursive) throws IllegalAccessException {
-        Set<DiffObject> differences = difference(mainObject, mergeObject);
+    public static String merge(Object mainObject, Object mergeObject, boolean recursive) throws IllegalAccessException {
+        return merge(mainObject, mergeObject, recursive, false);
+    }
+
+    /**
+     * Extended merge two objects and return string of changes.
+     * Use this for mapping different classes. You should annotated your fields with {@link Merge} and specified annotation field {@link Merge#value()}
+     *
+     * @param mainObject  Main object to merge
+     * @param mergeObject secondary object for merge
+     * @param recursive   should merge inner objects
+     * @return String of changes
+     * @throws IllegalAccessException
+     */
+    public static String extendedMerge(Object mainObject, Object mergeObject, boolean recursive) throws IllegalAccessException {
+        return merge(mainObject, mergeObject, recursive, true);
+    }
+
+    public static Set<DiffObject> extendedDifference(Object mainObject, Object mergeObject) throws IllegalAccessException {
+        Map<Field, Field> fields = new HashMap<Field, Field>();
+        Set<DiffObject> differences = new HashSet<DiffObject>();
+
+        Class<?> mainClass = mainObject.getClass();
+        Class<?> mergeClass = mergeObject.getClass();
+
+        Set<Field> mainFields = findFields(mainClass, MERGE_CLASS);
+        Set<Field> mergeFields = findFields(mergeClass, MERGE_CLASS);
+
+        for (Field mainFiled : mainFields) {
+            String mainName = mainFiled.getDeclaredAnnotation(MERGE_CLASS).value();
+            if (mainName.length() > 0) {
+                for (Field mergeField : mergeFields) {
+                    if (mainName.equals(mergeField.getAnnotation(MERGE_CLASS).value())) {
+                        fields.put(mainFiled, mergeField);
+                    }
+                }
+            }
+        }
+
+        for (Field mainField : fields.keySet()) {
+            Field mergeField = fields.get(mainField);
+
+            mainField.setAccessible(true);
+            mergeField.setAccessible(true);
+
+            Object oldValue = mainField.get(mainObject);
+            Object newValue = mergeField.get(mergeObject);
+
+            if (notEquals(oldValue, newValue)) {
+                differences.add(new DiffObject(oldValue, newValue, mainField));
+            }
+        }
+
+        return differences;
+    }
+
+    private static String merge(Object mainObject, Object mergeObject, boolean recursive, boolean extended) throws IllegalAccessException {
+        Set<DiffObject> differences = extended ? extendedDifference(mainObject, mergeObject) : difference(mainObject, mergeObject);
 
         StringBuilder builder = new StringBuilder();
 
@@ -105,6 +168,10 @@ public class DiffUtils {
             c = c.getSuperclass();
         }
         return set;
+    }
+
+    public static boolean notEquals(final Object object1, final Object object2) {
+        return !equals(object1, object2);
     }
 
     private static boolean equals(final Object object1, final Object object2) {

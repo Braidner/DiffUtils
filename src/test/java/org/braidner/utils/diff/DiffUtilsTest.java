@@ -2,6 +2,8 @@ package org.braidner.utils.diff;
 
 import org.braidner.utils.diff.test.TestAnotherEntity;
 import org.braidner.utils.diff.test.TestEntity;
+import org.braidner.utils.diff.test.extended.TestOne;
+import org.braidner.utils.diff.test.extended.TestTwo;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -31,5 +33,12 @@ public class DiffUtilsTest {
     @Test
     public void testMerge() throws Exception {
         System.out.println(DiffUtils.merge(mainEntity, mergeEntity, false));
+    }
+
+    @Test
+    public void testExtendedMerge() throws Exception {
+        TestOne testOne = new TestOne("cascasc", "adasdas", "adasda");
+        TestTwo testTwo = new TestTwo("ccaascasc", "adazcxczxsdas", "zxc");
+        System.out.println(DiffUtils.extendedMerge(testOne, testTwo, false));
     }
 }
